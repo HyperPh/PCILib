@@ -44,40 +44,6 @@ function array_compare(a,b){
 }
 
 
-//NaN和任何数比较大小都是false(包括NaN自身)
-function max(a,return_i=false){
-    let k=0
-    for(let i=1;i<a.length;i++){
-        if(a[i]>a[k]){
-            k=i
-        }
-    }
-
-    if(return_i){
-        return k
-    }
-    else{
-        return a[k]
-    }
-}
-
-function min(a,return_i=false){
-    let k=0
-    for(let i=1;i<a.length;i++){
-        if(a[i]<a[k]){
-            k=i
-        }
-    }
-    
-    if(return_i){
-        return k
-    }
-    else{
-        return a[k]
-    }
-}
-
-
 
 //the following code is partly copied from a js book (modefied by PCI Hyperbola)
 class object{
@@ -274,6 +240,6 @@ class ndarray{
 }
 
 
-export {array_compare,max,min,object,ndarray}
+export {array_compare,object,ndarray}
 
 

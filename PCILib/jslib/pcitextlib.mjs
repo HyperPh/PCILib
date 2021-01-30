@@ -4,9 +4,7 @@
 // js的string变量存储字符串使用的是unicode(utf-16)编码，要保存时必须选择其他编码后进行传输，比如转成utf-8,utf-32等。
 //static方法调用必须加类名(类内部可以用this代替),否则报错ReferenceError
 
-var pattern_str=/(['"`])[^'"`]*\1/
-var pattern_hex=/[0-9a-fA-F]/
-var pattern_letter=/[0-9a-zA-Z_]/
+
 
 // emoji的字节字符占两个unicode(utf-16)字符(4个utf-8)。使用String.fromCharCode也可以实现，需要进行两次fromCharCode，没有fromPointCode方便。
 
@@ -36,14 +34,14 @@ class utf8{
     
 
     /**
-     * unicode=>utf-8,与encodeURIComponent的不同之处就是%换成了\x,以及把[0-9A-Za-z]也换成了16进制表示(python的bytes并没有做此转换)
+     * unicode=>utf-8 bytes string,与encodeURIComponent的不同之处就是%换成了\x,以及把[0-9A-Za-z]也换成了16进制表示(python的bytes并没有做此转换)
      * 
      * @param {string} unicodestr 
      * @returns {string}
      */
-    static unicodestr_to_utf8str(unicodestr) {
+    static unicodestr_to_utf8bytesstr(unicodestr) {
         let uri=this.encodeURIComponent(unicodestr)
-        return this.uriComponent_to_utf8str(uri)
+        return this.uriComponent_to_utf8bytesstr(uri)
     }
 
     //完美实现了内置函数encodeURIComponent
@@ -75,7 +73,7 @@ class utf8{
         return uri.replace(/%/g,'\\x').toLowerCase()
     }
 
-    static uriComponent_to_utf8str(uri){
+    static uriComponent_to_utf8bytesstr(uri){
         let b=this.uriComponent_to_bytes(uri)
         let s=''
         for(let i=0;i<b.length;i++){
@@ -112,8 +110,8 @@ class utf8{
         return this.uriComponent_to_bytes(uri)
     }
 
-    static utf8str_to_bytes(utf8str){
-        return utf8str.slice(2).split('\\x').map((hex)=>parseInt(hex,16))//先要去掉开头的\x
+    static utf8bytesstr_to_bytes(utf8bytesstr){
+        return utf8bytesstr.slice(2).split('\\x').map((hex)=>parseInt(hex,16))//先要去掉开头的\x
     }
 
     /**
@@ -125,8 +123,15 @@ class utf8{
         let s = utf8Bytes.reduce((prev, cur) => prev += `%${cur.toString(16)}`, '')//prev-前一个元素，cur-当前元素，参照python的functools.reduce
         return this.decodeURIComponent(s)
     }
+    
+    //utf-8 bytes string => unicode string
+    static utf8bytesstr_to_unicodestr(utf8bytesstr){
+        let b=this.utf8bytesstr_to_bytes(utf8bytesstr)
+        return this.bytes_to_unicodestr(b)
+    }
 
     /**
+     * 自己实现的
      * utf-8 bytes => unicode string
      * 数组中每个数都是0~255(一个字节)
      * 解析方式是大端，这样才能使用fromCharCode(它是按大端解析的)
@@ -190,14 +195,9 @@ class utf8{
         }
         return unicodeStr;
     }
-
-    //utf-8 string => unicode string
-    static utf8str_to_unicodestr(utf8str){
-        let b=this.utf8str_to_bytes(utf8str)
-        return this.bytes_to_unicodestr(b)
-    }
      
     /**
+     * 自己实现的
      * unicode => utf-8 完整实现
      * @param {string} s 
      * @returns {Array} 数组中每个数都是0~255(一个字节)
@@ -245,6 +245,31 @@ class utf8{
             }
         }
         return t
+    }
+
+    /**
+     * 强行把unicode string转成的utf-8数组转换成字符串，一般是一堆乱码
+     * @param {string} unicodestr 
+     */
+    static unicodestr_to_utf8str(unicodestr){
+        let b=this.unicodestr_to_bytes(unicodestr)
+        let newStr=''
+        for(let icode of b){
+            newStr+=String.fromCharCode(icode)
+        }
+        return newStr
+    }
+
+    /**
+     * 把强行转成的utf-8字符串转回unicode string
+     * @param {string} utf8str 
+     */
+    static utf8str_to_unicodestr(utf8str){
+        let b=[]
+        for(let i=0;i<utf8str.length;i++){
+            b[i]=utf8str.charCodeAt(i)
+        }
+        return this.bytes_to_unicodestr(b)
     }
 
 
@@ -308,10 +333,15 @@ class utf8{
         return coerceArray(a);
     }
 
-    static encode_str=this.unicodestr_to_utf8str//返回字符串
-    static decode_str=this.utf8str_to_unicodestr//输入字符串
+    static utf8encoder=new TextEncoder()
+    static utf8decoder=new TextDecoder()
+
+    static encode_str=this.unicodestr_to_utf8str//返回字符串，一般是一堆乱码
+    static decode_str=this.utf8str_to_unicodestr//输入一般是一堆乱码的字符串
     static encode=this.unicodestr_to_bytes//返回数组
     static decode=this.bytes_to_unicodestr//输入数组
+    static encode_uint8=(s)=>this.utf8encoder.encode(s)//返回Uint8Array数组
+    static decode_uint8=(u8a)=>this.utf8decoder.decode(u8a)//输入Uint8Array数组
 
 }
 
@@ -403,14 +433,20 @@ class encoding{
 
 
 
-
-
-
-export const pcitextlib={
-    utf8:utf8,
-    base64:base64,
-    encoding:encoding,
+export {utf8,base64,encoding}
+export const patterns={
+    pattern_str:/(['"`])[^'"`]*\1/,
+    pattern_hex:/[0-9a-fA-F]/,
+    pattern_letter:/[0-9a-zA-Z_]/
 }
+
+// export const pcitextlib={
+//     utf8:utf8,
+//     base64:base64,
+//     encoding:encoding,
+// }
+
+
 
 //下面是一些细节解释
 
@@ -532,4 +568,10 @@ export const pcitextlib={
 // b'\xf0\x9f\x98\x83\xe6\x98\xafas4\xf0\x9f\x91\x80f[\xe6\x92\x92 #\xe6\x97\xa6 %'
 // b'\xf0\x9f\x98\x83\xe6\x98\xafas4\xf0\x9f\x91\x80f[\xe6\x92\x92 #\xe6\x97\xa6 %'
 
+
+
+// TextEncoder() 从 Firefox 48 and Chrome 53 开始不再需要参数
+// Note: 在Firefox 48和Chrome 53之前，编码类型标签被接受为TextEncoder对象的参数，现在这两个浏览器已经删除了除utf-8之外的任何编码器类型的支持，以符合规范。 传入TextEncoder构造函数的任何类型标签现在都将被忽略，并且将创建一个utf-8 TextEncoder。
+
+// new TextEncoder().encode(s)等价于pcitextlib.utf8.encode(s)
 

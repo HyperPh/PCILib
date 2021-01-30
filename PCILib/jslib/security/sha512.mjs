@@ -1,4 +1,5 @@
 
+"use strict"
 
 /*
  * A JavaScript implementation of the Secure Hash Algorithm, SHA-512, as defined

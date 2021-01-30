@@ -1,4 +1,7 @@
 
+"use strict"
+import * as pcitextlib from "../pcitextlib.mjs"
+
 /*
  * A JavaScript implementation of the RSA Data Security, Inc. MD4 Message
  * Digest Algorithm, as defined in RFC 1320.
@@ -18,10 +21,11 @@ var chrsz = 8; /* bits per input character. 8 - ASCII; 16 - Unicode   */
 
 /*
  * These are the functions you'll usually want to call
+ * modified by PCI Hyperbola
  */
-function hex_md4(s) { return binl2hex(core_md4(str2binl(s), s.length * chrsz)); }
-function b64_md4(s) { return binl2b64(core_md4(str2binl(s), s.length * chrsz)); }
-function str_md4(s) { return binl2str(core_md4(str2binl(s), s.length * chrsz)); }
+function hex_md4(s) { s=pcitextlib.utf8.encode_str(s); return binl2hex(core_md4(str2binl(s), s.length * chrsz)); }
+function b64_md4(s) { s=pcitextlib.utf8.encode_str(s); return binl2b64(core_md4(str2binl(s), s.length * chrsz)); }
+function str_md4(s) { s=pcitextlib.utf8.encode_str(s); return binl2str(core_md4(str2binl(s), s.length * chrsz)); }
 function hex_hmac_md4(key, data) { return binl2hex(core_hmac_md4(key, data)); }
 function b64_hmac_md4(key, data) { return binl2b64(core_hmac_md4(key, data)); }
 function str_hmac_md4(key, data) { return binl2str(core_hmac_md4(key, data)); }
